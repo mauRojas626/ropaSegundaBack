@@ -8,7 +8,8 @@ const s3 = require("../config/s3");
 const Usuario = require("../models/Usuario");
 const Provincia = require("../models/Provincia");
 const Comprador = require("../models/Comprador");
-const email = require("../config/correo");
+const Queja = require("../models/Queja");
+const Vendedor = require("../models/Vendedor");
 
 const GetVenta = async (req, res) => {
     try {
@@ -126,19 +127,98 @@ const CreateEnvio = async (req, res, next) => {
     }
 }
 
+const GetAllQuejas = async (req, res, next) => {
+    try {
+        let [sell, _] = await Venta.findByEstado(8)
+        const ventas = await Promise.all(sell.map(async (venta) => {
+            let [detalle, _] = await DetalleVenta.findById(venta.idVenta)
+            detalle = detalle[0]
+            if(venta.comprobantePago != null){
+                let url = await s3.getPhoto(venta.comprobantePago)
+                venta.comprobantePago = url
+            }
+            if(venta.comprobanteCliente != null){
+                let url = await s3.getPhoto(venta.comprobanteCliente)
+                venta.comprobanteCliente = url
+            }
+            let [vendedor, z] = await Vendedor.findById(venta.idVendedor)
+            vendedor = vendedor[0]
+            let envio = null
+            let [queja, w] = await Queja.findById(venta.idQueja)
+            queja = queja[0]
+            if(queja.evidencia != null){
+                let url = await s3.getPhoto(queja.evidencia)
+                queja.evidencia = url
+            }
+
+            let [comprador, y] = await Comprador.findById(venta.idComprador)
+            comprador = comprador[0]
+            if(venta.idEnvio != null){
+                [envio, _] = await Envio.findById(venta.idEnvio)
+                envio = envio[0]
+                if(envio.comprobanteCliente != null){
+                    let url = await s3.getPhoto(envio.comprobanteCliente)
+                    envio.comprobanteCliente = url
+                }
+                let [provincia, x] = await Provincia.findById(envio.idProvincia)
+                envio.idProvincia = provincia[0]
+                
+            } 
+            let [clothes, x] = await Prenda.findById(detalle.idPrenda)
+            const ropa = await Promise.all(clothes.map(async (prenda) => {
+                let [photos, _] = await Foto.findById(prenda.idPrenda)
+                let [medida, x] = await Medida.findById(prenda.idMedida)
+                let fotos = await Promise.all(photos.map(async (foto) =>{
+                    let url = await s3.getPhoto(foto.nombre)
+                    return {
+                        ...foto,
+                        url: url
+                    }
+                }))
+                return{
+                    ...prenda,
+                    fotos:fotos,
+                    idMedida: medida
+                }
+            }));
+            return{
+                ...venta,
+                prenda: ropa,
+                idEnvio: envio,
+                idVendedor: vendedor,
+                idComprador: comprador,
+                idQueja: queja
+            }
+        }))
+
+        res.json({response: ventas, status: 200});
+    } catch (error){
+        console.log(error)
+        next(error)
+    }
+}
+
+
 const GetAllVentas = async (req, res, next) => {
     try {
         let [sell, _] = await Venta.findByIdComprador(req.params.id)
         const ventas = await Promise.all(sell.map(async (venta) => {
             let [detalle, _] = await DetalleVenta.findById(venta.idVenta)
             detalle = detalle[0]
+            if(venta.comprobantePago != null){
+                let url = await s3.getPhoto(venta.comprobantePago)
+                venta.comprobantePago = url
+            }
+            if(venta.comprobanteCliente != null){
+                let url = await s3.getPhoto(venta.comprobanteCliente)
+                venta.comprobanteCliente = url
+            }
             let [vendedor, z] = await Usuario.findById(venta.idVendedor)
             vendedor = vendedor[0]
             let envio = null
 
             let [comprador, y] = await Comprador.findById(venta.idComprador)
             comprador = comprador[0]
-
             if(venta.idEnvio != null){
                 [envio, _] = await Envio.findById(venta.idEnvio)
                 envio = envio[0]
@@ -188,7 +268,7 @@ const Enviar = async (req, res, next) => {
         let venta = req.body
         let envio = venta.idEnvio
         const formattedDate = `${envio.fechaEntrega} 00:00:00`;
-        await Envio.enviar(envio.idEnvio, formattedDate) 
+        await Envio.enviar(envio.idEnvio, formattedDate, envio.direccion) 
         await Venta.enviar(envio.idEnvio)
         res.json({response: envio, status: 200})
     } catch (error) {
@@ -208,4 +288,16 @@ const CalificarVendedor = async (req, res, next) => {
     }
 }
 
-module.exports = { GetVenta, GetAllVentas, CreateVenta, EditVenta, ValidatePago, CreateEnvio, CotizarEnvio, payEnvio, ValidarPago2, Enviar, CalificarVendedor };
+const resolverQueja = async (req, res, next) => {
+    try{
+        let idQueja = req.params.id
+        await Venta.resolverQueja(idQueja)
+        res.status(200).json({response: idQueja, status: 200})
+    } catch (error) {
+        console.log(error)
+        next(error)
+    }
+}
+
+module.exports = { GetVenta, GetAllVentas, CreateVenta, EditVenta, ValidatePago, CreateEnvio, CotizarEnvio, 
+    payEnvio, ValidarPago2, Enviar, CalificarVendedor, GetAllQuejas, resolverQueja };

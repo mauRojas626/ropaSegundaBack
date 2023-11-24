@@ -10,13 +10,12 @@ class Usuario {
         this.telefono = telefono
         this.bloqueado = bloqueado
         this.reportado = reportado
-        this.salt = salt
     }
 
     async save(){
-        let sql = `INSERT INTO Usuario(nombre, apellido, correo, clave, bloqueado, reportado, salt) VALUES( ?, ?, ?, ?, '0', '0', ?
+        let sql = `INSERT INTO Usuario(nombre, apellido, correo, clave, bloqueado, reportado) VALUES( ?, ?, ?, ?, '0', '0'
         );`
-        const res = await db.query(sql, [this.nombre, this.apellido, this.correo, this.clave, this.salt])
+        const res = await db.query(sql, [this.nombre, this.apellido, this.correo, this.clave])
         return res; 
     }
 

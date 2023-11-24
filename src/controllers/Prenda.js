@@ -71,7 +71,7 @@ const EditPrenda = async (req, res, next) => {
         }
         if(prenda.deletedFiles){
             prenda.deletedFiles.map(async (foto) => {
-                await s3.deletePhoto(foto)
+                //await s3.deletePhoto(foto)
                 await Foto.deleteByName(foto)
             })
         }
@@ -135,9 +135,7 @@ const blockPrenda = async (req, res, next) => {
 
 const unBlockPrenda = async (req, res, next) => {
     try{
-        let idPrenda = req.params.id;
-        let [prenda, x] = await Prenda.findById(idPrenda);
-        prenda = prenda[0]
+        let idPrenda = req.params.id
         await Prenda.updateAbandonado(idPrenda)
         res.status(200).json({response: "Prenda bloqueada", status: 200});
     }catch(error){

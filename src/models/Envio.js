@@ -13,7 +13,7 @@ class Envio {
     }
 
     async save(){
-        let sql = `INSERT INTO Envio(precioEnvio, fechaEntrega, direccion, tipoEntrega, comprobanteCliente, idProvincia, telefono) VALUES( null, null, ?, ?, null, ?, ?);`
+        let sql = `INSERT INTO Envio(precioEnvio, fechaEntrega, direccion, tipoEntrega, comprobanteCliente, idProvincia, telefono, fechaSolicitud) VALUES( null, null, ?, ?, null, ?, ?, CURDATE());`
         const res = await db.query(sql, [this.direccion, this.tipoEntrega, this.idProvincia, this.telefono])
         return res; 
     }
@@ -41,9 +41,9 @@ class Envio {
         return db.query(sql, [fotoName, id])
     }
 
-    static enviar(id, fechaEntrega){
-        let sql = `UPDATE Envio SET fechaEntrega = ? WHERE(idEnvio = ?);`
-        return db.query(sql, [fechaEntrega, id])
+    static enviar(id, fechaEntrega, direccion){
+        let sql = `UPDATE Envio SET fechaEntrega = ?, direccion = ? WHERE(idEnvio = ?);`
+        return db.query(sql, [fechaEntrega, direccion, id])
         
     }
 

@@ -11,8 +11,8 @@ class Comprador extends Usuario {
     }
 
     async save(id){
-        let sql = `INSERT INTO Comprador(direccion, genero, dni, idUsuario, idProvincia, idMedida) VALUES( ?, ?, ?, ?, ?, ?);`
-        const res = await db.query(sql, [this.direccion, this.genero, this.dni, id, idProvincia])
+        let sql = `INSERT INTO Comprador(direccion, genero, dni, idUsuario, idProvincia, idMedida) VALUES( ?, ?, ?, ?, null, null);`
+        const res = await db.query(sql, [this.direccion, this.genero, this.dni, id])
         return res; 
     }
 
@@ -35,8 +35,18 @@ class Comprador extends Usuario {
         return db.query(sql, [id])
     }
 
-    static validateRuc(id) {
-        let sql = `UPDATE Vendedor SET aprobado = 1 WHERE idUsuario = ?;`
+    static validateRuc(aprobado, id) {
+        let sql = `UPDATE Vendedor SET aprobado = ? WHERE idUsuario = ?;`
+        return db.query(sql, [aprobado, id])
+    }
+
+    static reportar(id, num) {
+        let sql = `UPDATE Usuario SET reportado = ? WHERE idUsuario = ?;`
+        return db.query(sql, [num, id])
+    }
+
+    static bloquear(id){
+        let sql = `UPDATE Usuario SET bloqueado = 1 WHERE idUsuario = ?;`
         return db.query(sql, [id])
     }
 

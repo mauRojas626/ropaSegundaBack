@@ -12,4 +12,6 @@ router.route("/payEnvio").post(ventaController.payEnvio)
 router.route("/validateShip").post(ventaController.ValidarPago2)
 router.route("/enviar").post(ventaController.Enviar)
 router.route("/calificar").post(ventaController.CalificarVendedor)
+router.route("/quejas").get(ventaController.GetAllQuejas)
+router.route("/resolverQueja/:id").get(ventaController.resolverQueja)
 module.exports = router;

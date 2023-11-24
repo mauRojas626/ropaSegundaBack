@@ -36,11 +36,17 @@ async function getPhoto(filename){
 }
 
 async function deletePhoto(filename){
-    const command = new S3.DeleteObjectCommand({
-        Bucket: process.env.S3_BUCKET_NAME,
-        Key: filename
-    })
-    const result = await client.send(command)
+    let result = ""
+    try {
+        const command = new S3.DeleteObjectCommand({
+            Bucket: process.env.S3_BUCKET_NAME,
+            Key: filename
+        })
+        result = await client.send(command)
+    }
+    catch (err) {
+        console.log(err)
+    }   
     return result
 }
 module.exports = { uploadFile, getPhoto, deletePhoto };

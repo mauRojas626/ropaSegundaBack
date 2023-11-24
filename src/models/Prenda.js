@@ -37,6 +37,12 @@ class Prenda {
         return res
     }
 
+    static findAllByVendedor(id) {
+        let sql = "SELECT * FROM Prenda where idVendedor = ?;"
+        const res = db.query(sql, [id]);
+        return res
+    }
+
     static findById(id) {
         let sql = `SELECT * FROM Prenda WHERE idPrenda = ?;`
         return db.query(sql, [id])
@@ -54,6 +60,16 @@ class Prenda {
 
     static updateAbandonado(id){
         let sql = `UPDATE Prenda SET Comprado = 0 WHERE idPrenda = ?;`
+        return db.query(sql, [id])
+    }
+
+    static deleteByVendedor(id) {
+        let sql = `DELETE FROM Prenda WHERE idVendedor = ?;`
+        return db.query(sql, [id])
+    }
+
+    static findByIdVendedor(id) {
+        let sql = `SELECT * FROM Prenda WHERE idVendedor = ?;`
         return db.query(sql, [id])
     }
 

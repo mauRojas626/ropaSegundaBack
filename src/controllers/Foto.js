@@ -2,7 +2,6 @@ const s3 = require("../config/s3");
 
 const CreateFoto = async (req, res, next) => {
     try {
-        console.log(req.files.file)
         await s3.uploadFile(req.files.file, "prueba1")
         res.status(200).json({message: 'uploadFile'});
     } catch (error){

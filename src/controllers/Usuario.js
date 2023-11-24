@@ -34,7 +34,6 @@ const EditUser = async (req, res, next) => {
     try{
         let {id, nombre, apellido, correo, clave, telefono, bloqueado, reportado} = req.body
         let user = new Usuario(nombre, apellido, correo, clave, telefono, bloqueado, reportado);
-        console.log(user)
         const newuser = await user.edit(id);
         res.status(200).json(newuser)
     } catch (error) {

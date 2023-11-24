@@ -9,4 +9,6 @@ router.route("/create").post(compradorController.CreateComprador)
 router.route("/edit").post(compradorController.EditComprador)
 router.route("/validate").post(compradorController.ValidateUser)
 router.route("/validateRuc").post(compradorController.ValidateRuc)
+router.route("/bloquear").post(compradorController.Bloquear)
+router.route("/reportar").post(compradorController.Reportar)
 module.exports = router;

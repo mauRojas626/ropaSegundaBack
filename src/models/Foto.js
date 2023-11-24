@@ -9,7 +9,6 @@ class Foto {
 
     async save(){
         let sql = `INSERT INTO Foto(nombre, idPrenda) VALUES( ?, ?);`
-        console.log(this.nombre)
         const res = await db.query(sql, [this.nombre, this.idPrenda])
         return res;
     }

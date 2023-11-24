@@ -19,6 +19,7 @@ app.use(express.json());
 app.use(fileUpload())
 app.use(cors({
     origin: 'http://localhost:3000'
+//    origin: 'http://mrbucket-tesis.s3-website-us-east-1.amazonaws.com/'
 }));
 
 app.use("/clothes", routerPrenda)

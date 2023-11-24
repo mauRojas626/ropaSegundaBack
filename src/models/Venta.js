@@ -81,6 +81,26 @@ class Venta {
         sql = `INSERT INTO Comentario (texto, calificacion, utilidad, fecha, idVendedor) VALUES (?, ?, 1, CURDATE(), ?);`
         return db.query(sql, [comentario, calificacion, idVendedor])
     }
+
+    static block(id, queja){
+        let sql = `UPDATE Venta SET estado = 8, idQueja = ? WHERE(idVenta = ?);`
+        return db.query(sql, [queja, id])
+    }
+
+    static findByIdEnvio(id) {
+        let sql = `SELECT * FROM Venta WHERE idEnvio = ?;`
+        return db.query(sql, [id])
+    }
+
+    static findByEstado(estado) {
+        let sql = `SELECT * FROM Venta WHERE estado = ?;`
+        return db.query(sql, [estado])
+    }
+
+    static resolverQueja(id){
+        let sql = `UPDATE Venta SET estado = 9 WHERE(idQueja = ?);`
+        return db.query(sql, [id])
+    }
 }
 
 module.exports = Venta

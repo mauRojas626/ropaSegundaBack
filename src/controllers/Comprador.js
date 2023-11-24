@@ -2,11 +2,14 @@ const Usuario = require("../models/Usuario");
 const Comprador = require("../models/Comprador");
 const bcrypt = require('bcrypt');
 const Medida = require("../models/Medida");
-const Venta = require("../models/Venta");
 const Vendedor = require("../models/Vendedor");
 const s3 = require("../config/s3");
 const Consulta = require("../models/Consulta");
+const email = require("../config/correo");
 const Foto = require("../models/Foto");
+const Venta = require("../models/Venta");
+const Queja = require("../models/Queja");
+const Prenda = require("../models/Prenda");
 
 const GetComprador = async (req, res) => {
     try {
@@ -23,9 +26,9 @@ const GetComprador = async (req, res) => {
 const CreateComprador = async (req, res, next) => {
     try{
         let comprador = req.body
-        const salt = bcrypt.genSaltSync(10);
+        const salt = bcrypt.genSaltSync(10)
         const hash = bcrypt.hashSync(comprador.clave, salt);
-        user = new Usuario(comprador.nombre, comprador.apellido, comprador.correo, hash, null, 0, 0, salt);
+        user = new Usuario(comprador.nombre, comprador.apellido, comprador.correo, hash, null, 0, 0);
         let [newUser, _] = await user.save();
         comprador.idUsuario = newUser.insertId
         let buyer = new Comprador(comprador)
@@ -43,7 +46,6 @@ const EditComprador = async (req, res, next) => {
         let comprador = new Comprador(usuario)
         let buyer = await Comprador.findById(usuario.idUsuario)
         comprador.idProvincia = usuario.idProvincia
-        console.log(usuario)
         
         if(usuario.idMedida != 0){
             let medida = new Medida(usuario.idMedida)
@@ -57,15 +59,15 @@ const EditComprador = async (req, res, next) => {
         else{
             comprador.idMedida = null
         }
-        if(usuario.idVendedor != undefined){
+        if(usuario.idVendedor != 0){
             if(req.files != undefined){
                 if(req.files.yape){
-                    await s3.uploadFile(req.files.yape.data, req.files.yape.name)
-                    usuario.idVendedor.qrYape = req.files.yape.name
+                    await s3.uploadFile(req.files.yape, "a" + req.files.yape.name)
+                    usuario.idVendedor.qrYape = "a" + req.files.yape.name
                 }
                     
                 if(req.files.plin){
-                    await s3.uploadFile(req.files.plin.data, req.files.plin.name)
+                    await s3.uploadFile(req.files.plin, req.files.plin.name)
                     usuario.idVendedor.qrPlin = req.files.plin.name
                 }
             }
@@ -73,11 +75,13 @@ const EditComprador = async (req, res, next) => {
             seller = seller[0]
             let vendedor = new Vendedor(usuario.idVendedor)
             if(seller == undefined || seller.length == 0){
-                console.log("entro")
                 vendedor = await vendedor.save(usuario.idUsuario)
             }
             else{
-                vendedor = await vendedor.edit(usuario.idUsuario)
+                if(seller.RUC != usuario.idVendedor.ruc){
+                    vendedor.aprobado = 0
+                }
+                vendedor = await Vendedor.edit(usuario.idUsuario)
             }
         }   
         buyer = buyer[0]
@@ -121,9 +125,7 @@ const ValidateUser = async (req, res, next) => {
         if(usuario.length == 0){
             res.status(200).json({response: "Usuario no encontrado", status: 404})
         } else{
-            const hashedPassword = bcrypt.hashSync(user.clave, usuario[0].salt);
-            
-            if(hashedPassword == usuario[0].clave){
+            if(bcrypt.compareSync(user.clave, usuario[0].clave)){
                 let [comprador, _] = await Comprador.findById(usuario[0].idUsuario)
                 comprador = comprador[0]
                 if(comprador.bloqueado == 1){
@@ -168,7 +170,14 @@ const ValidateUser = async (req, res, next) => {
 const ValidateRuc = async (req, res, next) => {
     try{
         let user = req.body
-        if(user.idVendedor.aprobado !== 0) await Comprador.validateRuc(user.idUsuario)
+        if(user.idVendedor.aprobado === 1) {
+            await Comprador.validateRuc(1, user.idUsuario)
+            await email.sendEmail(user.correo, 2)
+        }
+        else{
+            await Comprador.validateRuc(2, user.idUsuario)
+            await email.sendEmail(user.correo, 1)
+        } 
         res.status(200).json({response: "Usuario validado", status: 200})
     } catch (error) {
         console.log(error)
@@ -176,4 +185,50 @@ const ValidateRuc = async (req, res, next) => {
     }
 }
 
-module.exports = { GetComprador, GetAllCompradores, CreateComprador, EditComprador, ValidateUser, ValidateRuc };
+const Bloquear = async (req, res, next) => {
+    try {
+        let user = req.body
+        let clothes = await Prenda.findByIdVendedor(user.idUsuario)
+        clothes = clothes[0]
+        for(const cloth of clothes){
+            await Foto.delete(cloth.idPrenda)
+        }
+        await Prenda.deleteByVendedor(user.idUsuario)
+        await Comprador.bloquear(user.idUsuario)
+        res.status(200).json({response: user, status: 200})
+    } catch (error) {
+        console.log(error)
+        next(error)
+    }
+}
+
+const Reportar = async (req, res, next) => {
+    try {
+        let venta = JSON.parse(req.body.venta)
+        let user = null
+        let queja = new Queja(venta.queja)
+        let fotos = req.files.files
+        await s3.uploadFile(fotos, fotos.name)
+        queja.evidencia = fotos.name
+        let idQueja = await queja.save()
+        idQueja = idQueja[0].insertId
+        if(venta.estado === 0 || venta.estado === 4){
+            user = venta.idComprador
+        } else user = venta.idVendedor
+        await Comprador.reportar(user.idUsuario, user.reportado + 1)
+        if(venta.estado === 0) await Venta.block(venta.idVenta, idQueja)
+        else {
+            let ventas = await Venta.findByIdEnvio(venta.idEnvio.idEnvio)
+            for(const element of ventas){
+                await Venta.block(element.idVenta, idQueja)
+            }
+        }
+        //email.sendEmail(user.correo, 3)
+        res.status(200).json({response: "Usuario reportado", status: 200})
+    } catch (error) {
+        console.log(error)
+        next(error)
+    }
+}
+
+module.exports = { GetComprador, GetAllCompradores, CreateComprador, EditComprador, ValidateUser, ValidateRuc, Bloquear, Reportar };

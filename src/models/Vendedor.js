@@ -13,7 +13,7 @@ class Vendedor  {
 
     async save(id){
         let sql = `INSERT INTO Vendedor(qrPlin, qrYape, delivery, agente, ruc, aprobado, idUsuario) VALUES( ?, ?, ?, ?, ?, 0, ?);`
-        const res = await db.query(sql, [this.qrPlin, this.qrYape, this.delivery, this.agencia, this.ruc, this.aprobado, id])
+        const res = await db.query(sql, [this.qrPlin, this.qrYape, this.delivery, this.agencia, this.ruc, id])
         return res; 
     }
 
