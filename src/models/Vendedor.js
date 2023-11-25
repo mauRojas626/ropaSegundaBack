@@ -18,7 +18,7 @@ class Vendedor  {
     }
 
     async edit(id){
-        let sql = `UPDATE Vendedor SET qrPlin = ?, qrYape = ?, delivery = ?, agente = ?, ruc = ?, aprobado = ? WHERE(idUsuario = ?);`
+        let sql = `UPDATE Vendedor SET qrPlin = ?, qrYape = ?, delivery = ?, agente = ?, RUC = ?, aprobado = ? WHERE(idUsuario = ?);`
         const res = await db.query(sql, [this.qrPlin, this.qrYape, this.delivery, this.agencia, this.ruc, this.aprobado, id])
         return res; 
     }

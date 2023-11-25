@@ -34,7 +34,10 @@ const CreateVenta = async (req, res, next) => {
         id = id.insertId
         let detalle = new DetalleVenta(0, venta.idPrenda, id)
         await detalle.save();
-        await email.sendEmail(venta.idVendedor.correo)
+        console.log(venta.idVendedor)
+        let [vendedor, v] = await Vendedor.findById(venta.idVendedor)
+        vendedor = vendedor[0]
+        await email.sendEmail(vendedor.correo)
         await Prenda.updateComprado(venta.idPrenda)
         res.json({ status: 200, response: venta.idVenta })
     } catch (error) {
