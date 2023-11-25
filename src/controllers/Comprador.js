@@ -81,7 +81,7 @@ const EditComprador = async (req, res, next) => {
                 if(seller.RUC != usuario.idVendedor.ruc){
                     vendedor.aprobado = 0
                 }
-                vendedor = await Vendedor.edit(usuario.idUsuario)
+                vendedor = await vendedor.edit(usuario.idUsuario)
             }
         }   
         buyer = buyer[0]
@@ -223,7 +223,7 @@ const Reportar = async (req, res, next) => {
                 await Venta.block(element.idVenta, idQueja)
             }
         }
-        //email.sendEmail(user.correo, 3)
+        email.sendEmail(user.correo, 3)
         res.status(200).json({response: "Usuario reportado", status: 200})
     } catch (error) {
         console.log(error)
